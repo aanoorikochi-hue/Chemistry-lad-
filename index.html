@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>آزمایشگاه شیمی مجازی</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    font-family: Tahoma, Arial, sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    color: #eee;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  h1 {
+    text-align: center;
+    color: #4fc3f7;
+    margin-bottom: 25px;
+    text-shadow: 0 0 10px rgba(79,195,247,0.5);
+  }
+
+  .tabs {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+  }
+
+  .tab-btn {
+    padding: 12px 28px;
+    background: #0f3460;
+    color: #eee;
+    border: 2px solid #4fc3f7;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s;
+  }
+
+  .tab-btn:hover { background: #16498a; }
+  .tab-btn.active {
+    background: #4fc3f7;
+    color: #0f0f1e;
+    font-weight: bold;
+    box-shadow: 0 0 15px #4fc3f7;
+  }
+
+  .section { display: none; }
+  .section.active { display: block; animation: fadeIn 0.4s; }
+  @keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
+
+  /* ---------- جدول تناوبی ---------- */
+  .periodic-wrapper {
+    overflow-x: auto;
+    padding: 10px;
+  }
+
+  .periodic-table {
+    display: grid;
+    grid-template-columns: repeat(18, 55px);
+    grid-template-rows: repeat(7, 55px);
+    gap: 3px;
+    justify-content: center;
+    min-width: 1050px;
+  }
+
+  .element {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 11px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 1px solid rgba(255,255,255,0.2);
+    position: relative;
+    padding: 2px;
+    line-height: 1.1;
+  }
+
+  .element:hover {
+    transform: scale(1.15);
+    z-index: 10;
+    box-shadow: 0 0 15px currentColor;
+  }
+
+  .element .num { font-size: 9px; opacity: 0.8; }
+  .element .sym { font-size: 15px; font-weight: bold; }
+  .element .name { font-size: 8px; opacity: 0.85; }
+
+  /* رنگ دسته‌ها */
+  .alkali     { background:#ff6b6b; color:#fff; }
+  .alkaline   { background:#ffa94d; color:#000; }
+  .transition { background:#ffd43b; color:#000; }
+  .post-trans { background:#69db7c; color:#000; }
+  .metalloid  { background:#38d9a9; color:#000; }
+  .nonmetal   { background:#4dabf7; color:#fff; }
+  .halogen    { background:#b197fc; color:#fff; }
+  .noble      { background:#f783ac; color:#fff; }
+  .lanthanide { background:#f06595; color:#fff; }
+  .actinide   { background:#c2255c; color:#fff; }
+  .unknown    { background:#868e96; color:#fff; }
+
+  .empty { visibility: hidden; }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 25px;
+    font-size: 13px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .legend-color {
+    width: 18px; height: 18px; border-radius: 4px;
+  }
+
+  /* ---------- آزمایشگاه ---------- */
+  .lab-container {
+    max-width: 900px;
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  .beaker-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 25px;
+  }
+
+  .beaker {
+    position: relative;
+    width: 200px;
+    height: 240px;
+    margin: 20px auto;
+  }
+
+  .beaker-glass {
+    position: absolute;
+    bottom: 0;
+    width: 200px;
+    height: 220px;
+    border: 4px solid #a8dadc;
+    border-top: none;
+    border-radius: 0 0 20px 20px;
+    background: rgba(255,255,255,0.05);
+    box-shadow: inset 0 0 20px rgba(255,255,255,0.1);
+    overflow: hidden;
+  }
+
+  .water {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 70%;
+    background: linear-gradient(to bottom, #4fc3f7, #0288d1);
+    transition: background 0.8s ease, height 0.5s ease;
+    border-radius: 0 0 16px 16px;
+  }
+
+  .water::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 0;
+    width: 100%;
+    height: 16px;
+    background: inherit;
+    border-radius: 50%;
+    opacity: 0.7;
+  }
+
+  .bubbles {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .bubble {
+    position: absolute;
+    background: rgba(255,255,255,0.6);
+    border-radius: 50%;
+    animation: rise 2s infinite;
+  }
+
+  @keyframes rise {
+    0% { transform: translateY(0); opacity: 0.8; }
+    100% { transform: translateY(-180px); opacity: 0; }
+  }
+
+  .result-text {
+    margin-top: 15px;
+    font-size: 18px;
+    min-height: 30px;
+    color: #4fc3f7;
+    font-weight: bold;
+  }
+
+  .compounds {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .compound-btn {
+    padding: 15px;
+    border-radius: 12px;
+    border: 2px solid rgba(255,255,255,0.3);
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: bold;
+    transition: all 0.3s;
+    color: #fff;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+  }
+
+  .compound-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+  }
+
+  .reset-btn {
+    margin-top: 20px;
+    padding: 10px 30px;
+    background: #e74c3c;
+    color: #fff;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 15px;
+  }
+  .reset-btn:hover { background: #c0392b; }
+
+  /* مودال اطلاعات عنصر */
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.75);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+  }
+  .modal.show { display: flex; }
+  .modal-content {
+    background: #1e2a4a;
+    padding: 30px;
+    border-radius: 15px;
+    border: 2px solid #4fc3f7;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+  }
+  .modal-content h2 { color: #4fc3f7; margin-bottom: 15px; font-size: 28px; }
+  .modal-content p { margin: 8px 0; font-size: 15px; }
+  .close-btn {
+    margin-top: 20px;
+    padding: 8px 25px;
+    background: #4fc3f7;
+    color: #000;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+
+<h1>🧪 آزمایشگاه شیمی مجازی</h1>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('periodic')">📊 جدول تناوبی</button>
+  <button class="tab-btn" onclick="showTab('lab')">💧 آزمایشگاه انحلال</button>
+</div>
+
+<!-- ================== بخش جدول تناوبی ================== -->
+<div id="periodic" class="section active">
+  <div class="periodic-wrapper">
+    <div class="periodic-table" id="periodicTable"></div>
+  </div>
+  <div class="legend" id="legend"></div>
+</div>
+
+<!-- ================== بخش آزمایشگاه ================== -->
+<div id="lab" class="section">
+  <div class="lab-container">
+    <div class="beaker-area">
+      <div class="beaker">
+        <div class="beaker-glass">
+          <div class="water" id="water"></div>
+          <div class="bubbles" id="bubbles"></div>
+        </div>
+      </div>
+      <div class="result-text" id="resultText">یک ترکیب را انتخاب کنید…</div>
+    </div>
+
+    <div class="compounds" id="compounds"></div>
+    <button class="reset-btn" onclick="resetWater()">🔄 ریست کردن آب</button>
+  </div>
+</div>
+
+<!-- مودال -->
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <h2 id="modalTitle"></h2>
+    <p id="modalInfo"></p>
+    <button class="close-btn" onclick="closeModal()">بستن</button>
+  </div>
+</div>
+
+<script>
+/* ================== داده‌های جدول تناوبی ================== */
+// مختصات: [ردیف, ستون] — گروه = ستون، دوره = ردیف
+const elements = [
+  // دوره 1
+  {n:1,  s:'H',  name:'هیدروژن',  r:1, c:1,  cat:'nonmetal',  mass:'1.008', conf:'1s¹'},
+  {n:2,  s:'He', name:'هلیم',     r:1, c:18, cat:'noble',     mass:'4.003', conf:'1s²'},
+  // دوره 2
+  {n:3,  s:'Li', name:'لیتیوم',   r:2, c:1,  cat:'alkali',    mass:'6.94',  conf:'[He]2s¹'},
+  {n:4,  s:'Be', name:'بریلیوم',  r:2, c:2,  cat:'alkaline',  mass:'9.012', conf:'[He]2s²'},
+  {n:5,  s:'B',  name:'بور',      r:2, c:13, cat:'metalloid', mass:'10.81', conf:'[He]2s²2p¹'},
+  {n:6,  s:'C',  name:'کربن',     r:2, c:14, cat:'nonmetal',  mass:'12.01', conf:'[He]2s²2p²'},
+  {n:7,  s:'N',  name:'نیتروژن',  r:2, c:15, cat:'nonmetal',  mass:'14.01', conf:'[He]2s²2p³'},
+  {n:8,  s:'O',  name:'اکسیژن',   r:2, c:16, cat:'nonmetal',  mass:'16.00', conf:'[He]2s²2p⁴'},
+  {n:9,  s:'F',  name:'فلوئور',   r:2, c:17, cat:'halogen',   mass:'19.00', conf:'[He]2s²2p⁵'},
+  {n:10, s:'Ne', name:'نئون',     r:2, c:18, cat:'noble',     mass:'20.18', conf:'[He]2s²2p⁶'},
+  // دوره 3
+  {n:11, s:'Na', name:'سدیم',     r:3, c:1,  cat:'alkali',    mass:'22.99', conf:'[Ne]3s¹'},
+  {n:12, s:'Mg', name:'منیزیم',   r:3, c:2,  cat:'alkaline',  mass:'24.31', conf:'[Ne]3s²'},
+  {n:13, s:'Al', name:'آلومینیوم',r:3, c:13, cat:'post-trans',mass:'26.98', conf:'[Ne]3s²3p¹'},
+  {n:14, s:'Si', name:'سیلیسیم',  r:3, c:14, cat:'metalloid', mass:'28.09', conf:'[Ne]3s²3p²'},
+  {n:15, s:'P',  name:'فسفر',     r:3, c:15, cat:'nonmetal',  mass:'30.97', conf:'[Ne]3s²3p³'},
+  {n:16, s:'S',  name:'گوگرد',    r:3, c:16, cat:'nonmetal',  mass:'32.06', conf:'[Ne]3s²3p⁴'},
+  {n:17, s:'Cl', name:'کلر',      r:3, c:17, cat:'halogen',   mass:'35.45', conf:'[Ne]3s²3p⁵'},
+  {n:18, s:'Ar', name:'آرگون',    r:3, c:18, cat:'noble',     mass:'39.95', conf:'[Ne]3s²3p⁶'},
+  // دوره 4
+  {n:19, s:'K',  name:'پتاسیم',   r:4, c:1,  cat:'alkali',    mass:'39.10', conf:'[Ar]4s¹'},
+  {n:20, s:'Ca', name:'کلسیم',    r:4, c:2,  cat:'alkaline',  mass:'40.08', conf:'[Ar]4s²'},
+  {n:21, s:'Sc', name:'اسکاندیم', r:4, c:3,  cat:'transition',mass:'44.96', conf:'[Ar]3d¹4s²'},
+  {n:22, s:'Ti', name:'تیتانیم',  r:4, c:4,  cat:'transition',mass:'47.87', conf:'[Ar]3d²4s²'},
+  {n:23, s:'V',  name:'وانادیم',  r:4, c:5,  cat:'transition',mass:'50.94', conf:'[Ar]3d³4s²'},
+  {n:24, s:'Cr', name:'کروم',     r:4, c:6,  cat:'transition',mass:'52.00', conf:'[Ar]3d⁵4s¹'},
+  {n:25, s:'Mn', name:'منگنز',    r:4, c:7,  cat:'transition',mass:'54.94', conf:'[Ar]3d⁵4s²'},
+  {n:26, s:'Fe', name:'آهن',      r:4, c:8,  cat:'transition',mass:'55.85', conf:'[Ar]3d⁶4s²'},
+  {n:27, s:'Co', name:'کبالت',    r:4, c:9,  cat:'transition',mass:'58.93', conf:'[Ar]3d⁷4s²'},
+  {n:28, s:'Ni', name:'نیکل',     r:4, c:10, cat:'transition',mass:'58.69', conf:'[Ar]3d⁸4s²'},
+  {n:29, s:'Cu', name:'مس',       r:4, c:11, cat:'transition',mass:'63.55', conf:'[Ar]3d¹⁰4s¹'},
+  {n:30, s:'Zn', name:'روی',      r:4, c:12, cat:'transition',mass:'65.38', conf:'[Ar]3d¹⁰4s²'},
+  {n:31, s:'Ga', name:'گالیم',    r:4, c:13, cat:'post-trans',mass:'69.72', conf:'[Ar]3d¹⁰4s²4p¹'},
+  {n:32, s:'Ge', name:'ژرمانیم',  r:4, c:14, cat:'metalloid', mass:'72.63', conf:'[Ar]3d¹⁰4s²4p²'},
+  {n:33, s:'As', name:'آرسنیک',   r:4, c:15, cat:'metalloid', mass:'74.92', conf:'[Ar]3d¹⁰4s²4p³'},
+  {n:34, s:'Se', name:'سلنیم',    r:4, c:16, cat:'nonmetal',  mass:'78.97', conf:'[Ar]3d¹⁰4s²4p⁴'},
+  {n:35, s:'Br', name:'برم',      r:4, c:17, cat:'halogen',   mass:'79.90', conf:'[Ar]3d¹⁰4s²4p⁵'},
+  {n:36, s:'Kr', name:'کریپتون',  r:4, c:18, cat:'noble',     mass:'83.80', conf:'[Ar]3d¹⁰4s²4p⁶'},
+  // دوره 5
+  {n:37, s:'Rb', name:'روبیدیم',  r:5, c:1,  cat:'alkali',    mass:'85.47', conf:'[Kr]5s¹'},
+  {n:38, s:'Sr', name:'استرانسیم',r:5, c:2,  cat:'alkaline',  mass:'87.62', conf:'[Kr]5s²'},
+  {n:39, s:'Y',  name:'ایتریم',   r:5, c:3,  cat:'transition',mass:'88.91', conf:'[Kr]4d¹5s²'},
+  {n:40, s:'Zr', name:'زیرکونیم', r:5, c:4,  cat:'transition',mass:'91.22', conf:'[Kr]4d²5s²'},
+  {n:41, s:'Nb', name:'نیوبیم',   r:5, c:5,  cat:'transition',mass:'92.91', conf:'[Kr]4d⁴5s¹'},
+  {n:42, s:'Mo', name:'مولیبدن',  r:5, c:6,  cat:'transition',mass:'95.95', conf:'[Kr]4d⁵5s¹'},
+  {n:43, s:'Tc', name:'تکنسیم',   r:5, c:7,  cat:'transition',mass:'98',    conf:'[Kr]4d⁵5s²'},
+  {n:44, s:'Ru', name:'روتنیم',   r:5, c:8,  cat:'transition',mass:'101.1', conf:'[Kr]4d⁷5s¹'},
+  {n:45, s:'Rh', name:'رودیم',    r:5, c:9,  cat:'transition',mass:'102.9', conf:'[Kr]4d⁸5s¹'},
+  {n:46, s:'Pd', name:'پالادیم',  r:5, c:10, cat:'transition',mass:'106.4', conf:'[Kr]4d¹⁰'},
+  {n:47, s:'Ag', name:'نقره',     r:5, c:11, cat:'transition',mass:'107.9', conf:'[Kr]4d¹⁰5s¹'},
+  {n:48, s:'Cd', name:'کادمیم',   r:5, c:12, cat:'transition',mass:'112.4', conf:'[Kr]4d¹⁰5s²'},
+  {n:49, s:'In', name:'ایندیم',   r:5, c:13, cat:'post-trans',mass:'114.8', conf:'[Kr]4d¹⁰5s²5p¹'},
+  {n:50, s:'Sn', name:'قلع',      r:5, c:14, cat:'post-trans',mass:'118.7', conf:'[Kr]4d¹⁰5s²5p²'},
+  {n:51, s:'Sb', name:'آنتیموان', r:5, c:15, cat:'metalloid', mass:'121.8', conf:'[Kr]4d¹⁰5s²5p³'},
+  {n:52, s:'Te', name:'تلوریم',   r:5, c:16, cat:'metalloid', mass:'127.6', conf:'[Kr]4d¹⁰5s²5p⁴'},
+  {n:53, s:'I',  name:'ید',       r:5, c:17, cat:'halogen',   mass:'126.9', conf:'[Kr]4d¹⁰5s²5p⁵'},
+  {n:54, s:'Xe', name:'زنون',     r:5, c:18, cat:'noble',     mass:'131.3', conf:'[Kr]4d¹⁰5s²5p⁶'},
+  // دوره 6
+  {n:55, s:'Cs', name:'سزیم',     r:6, c:1,  cat:'alkali',    mass:'132.9', conf:'[Xe]6s¹'},
+  {n:56, s:'Ba', name:'باریم',    r:6, c:2,  cat:'alkaline',  mass:'137.3', conf:'[Xe]6s²'},
+  {n:57, s:'La', name:'لانتان',   r:6, c:3,  cat:'lanthanide',mass:'138.9', conf:'[Xe]5d¹6s²'},
+  {n:72, s:'Hf', name:'هافنیم',   r:6, c:4,  cat:'transition',mass:'178.5', conf:'[Xe]4f¹⁴5d²6s²'},
+  {n:73, s:'Ta', name:'تانتال',   r:6, c:5,  cat:'transition',mass:'180.9', conf:'[Xe]4f¹⁴5d³6s²'},
+  {n:74, s:'W',  name:'تنگستن',   r:6, c:6,  cat:'transition',mass:'183.8', conf:'[Xe]4f¹⁴5d⁴6s²'},
+  {n:75, s:'Re', name:'رنیم',     r:6, c:7,  cat:'transition',mass:'186.2', conf:'[Xe]4f¹⁴5d⁵6s²'},
+  {n:76, s:'Os', name:'اسمیم',    r:6, c:8,  cat:'transition',mass:'190.2', conf:'[Xe]4f¹⁴5d⁶6s²'},
+  {n:77, s:'Ir', name:'ایریدیم',  r:6, c:9,  cat:'transition',mass:'192.2', conf:'[Xe]4f¹⁴5d⁷6s²'},
+  {n:78, s:'Pt', name:'پلاتین',   r:6, c:10, cat:'transition',mass:'195.1', conf:'[Xe]4f¹⁴5d⁹6s¹'},
+  {n:79, s:'Au', name:'طلا',      r:6, c:11, cat:'transition',mass:'197.0', conf:'[Xe]4f¹⁴5d¹⁰6s¹'},
+  {n:80, s:'Hg', name:'جیوه',     r:6, c:12, cat:'transition',mass:'200.6', conf:'[Xe]4f¹⁴5d¹⁰6s²'},
+  {n:81, s:'Tl', name:'تالیم',    r:6, c:13, cat:'post-trans',mass:'204.4', conf:'[Xe]4f¹⁴5d¹⁰6s²6p¹'},
+  {n:82, s:'Pb', name:'سرب',      r:6, c:14, cat:'post-trans',mass:'207.2', conf:'[Xe]4f¹⁴5d¹⁰6s²6p²'},
+  {n:83, s:'Bi', name:'بیسموت',   r:6, c:15, cat:'post-trans',mass:'209.0', conf:'[Xe]4f¹⁴5d¹⁰6s²6p³'},
+  {n:84, s:'Po', name:'پولونیم',  r:6, c:16, cat:'post-trans',mass:'209',   conf:'[Xe]4f¹⁴5d¹⁰6s²6p⁴'},
+  {n:85, s:'At', name:'استاتین',  r:6, c:17, cat:'halogen',   mass:'210',   conf:'[Xe]4f¹⁴5d¹⁰6s²6p⁵'},
+  {n:86, s:'Rn', name:'رادون',    r:6, c:18, cat:'noble',     mass:'222',   conf:'[Xe]4f¹⁴5d¹⁰6s²6p⁶'},
+  // دوره 7
+  {n:87, s:'Fr', name:'فرانسیم',  r:7, c:1,  cat:'alkali',    mass:'223',   conf:'[Rn]7s¹'},
+  {n:88, s:'Ra', name:'رادیم',    r:7, c:2,  cat:'alkaline',  mass:'226',   conf:'[Rn]7s²'},
+  {n:89, s:'Ac', name:'اکتینیم',  r:7, c:3,  cat:'actinide',  mass:'227',   conf:'[Rn]6d¹7s²'},
+  {n:104,s:'Rf', name:'رادرفوردیم',r:7,c:4,  cat:'transition',mass:'267',   conf:'[Rn]5f¹⁴6d²7s²'},
+  {n:105,s:'Db', name:'دوبنیم',   r:7, c:5,  cat:'transition',mass:'268',   conf:'[Rn]5f¹⁴6d³7s²'},
+  {n:106,s:'Sg', name:'سیبورگیم', r:7, c:6,  cat:'transition',mass:'269',   conf:'[Rn]5f¹⁴6d⁴7s²'},
+  {n:107,s:'Bh', name:'بوریم',    r:7, c:7,  cat:'transition',mass:'270',   conf:'[Rn]5f¹⁴6d⁵7s²'},
+  {n:108,s:'Hs', name:'هاسیم',    r:7, c:8,  cat:'transition',mass:'269',   conf:'[Rn]5f¹⁴6d⁶7s²'},
+  {n:109,s:'Mt', name:'مایتنریم', r:7, c:9,  cat:'unknown',   mass:'278',   conf:'[Rn]5f¹⁴6d⁷7s²'},
+  {n:110,s:'Ds', name:'دارمشتاتیم',r:7,c:10, cat:'unknown',   mass:'281',   conf:'[Rn]5f¹⁴6d⁸7s²'},
+  {n:111,s:'Rg', name:'رونتگنیم', r:7, c:11, cat:'unknown',   mass:'282',   conf:'[Rn]5f¹⁴6d⁹7s²'},
+  {n:112,s:'Cn', name:'کوپرنیسیم',r:7, c:12, cat:'unknown',   mass:'285',   conf:'[Rn]5f¹⁴6d¹⁰7s²'},
+  {n:113,s:'Nh', name:'نیهونیم',  r:7, c:13, cat:'unknown',   mass:'286',   conf:'[Rn]5f¹⁴6d¹⁰7s²7p¹'},
+  {n:114,s:'Fl', name:'فلروویم',  r:7, c:14, cat:'unknown',   mass:'289',   conf:'[Rn]5f¹⁴6d¹⁰7s²7p²'},
+  {n:115,s:'Mc', name:'مسکوویم',  r:7, c:15, cat:'unknown',   mass:'290',   conf:'[Rn]5f¹⁴6d¹⁰7s²7p³'},
+  {n:116,s:'Lv', name:'لیورموریم',r:7, c:16, cat:'unknown',   mass:'293',   conf:'[Rn]5f¹⁴6d¹⁰7s²7p⁴'},
+  {n:117,s:'Ts', name:'تنسین',    r:7, c:17, cat:'unknown',   mass:'294',   conf:'[Rn]5f¹⁴6d¹⁰7s²7p⁵'},
+  {n:118,s:'Og', name:'اوگانسون', r:7, c:18, cat:'unknown',   mass:'294',   conf:'[Rn]5f¹⁴6d¹⁰7s²7p⁶'},
+];
+
+const catNames = {
+  alkali:'فلز قلیایی', alkaline:'فلز قلیایی خاکی', transition:'فلز واسطه',
+  'post-trans':'فلز پس‌واسطه', metalloid:'شبه‌فلز', nonmetal:'نافلز',
+  halogen:'هالوژن', noble:'گاز نجیب', lanthanide:'لانتانید', actinide:'اکتینید',
+  unknown:'نامشخص'
+};
+
+/* ساخت جدول */
+const table = document.getElementById('periodicTable');
+elements.forEach(el => {
+  const div = document.createElement('div');
+  div.className = `element ${el.cat}`;
+  div.style.gridRow = el.r;
+  div.style.gridColumn = el.c;
+  div.innerHTML = `<span class="num">${el.n}</span><span class="sym">${el.s}</span><span class="name">${el.name}</span>`;
+  div.onclick = () => showElement(el);
+  table.appendChild(div);
+});
+
+/* لجند */
+const legend = document.getElementById('legend');
+Object.keys(catNames).forEach(cat => {
+  const item = document.createElement('div');
+  item.className = 'legend-item';
+  item.innerHTML = `<div class="legend-color ${cat}"></div><span>${catNames[cat]}</span>`;
+  legend.appendChild(item);
+});
+
+function showElement(el) {
+  document.getElementById('modalTitle').textContent = `${el.s} — ${el.name}`;
+  document.getElementById('modalInfo').innerHTML = `
+    <p><strong>عدد اتمی:</strong> ${el.n}</p>
+    <p><strong>جرم اتمی:</strong> ${el.mass}</p>
+    <p><strong>گروه:</strong> ${el.c} &nbsp;|&nbsp; <strong>دوره:</strong> ${el.r}</p>
+    <p><strong>دسته:</strong> ${catNames[el.cat]}</p>
+    <p><strong>آرایش الکترونی:</strong> ${el.conf}</p>
+  `;
+  document.getElementById('modal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('show');
+}
+
+/* ================== آزمایشگاه ================== */
+const compounds = [
+  { name:'مس(II) سولفات',   formula:'CuSO₄',  color:'#2196f3', desc:'محلول آبی روشن' },
+  { name:'پتاسیم دی‌کرومات',formula:'K₂Cr₂O₇',color:'#ff9800', desc:'محلول نارنجی' },
+  { name:'پتاسیم پرمنگنات', formula:'KMnO₄',  color:'#9c27b0', desc:'محلول بنفش' },
+  { name:'نیکل(II) کلرید',  formula:'NiCl₂',  color:'#4caf50', desc:'محلول سبز' },
+  { name:'کبالت(II) کلرید', formula:'CoCl₂',  color:'#e91e63', desc:'محلول صورتی' },
+  { name:'آهن(III) کلرید',  formula:'FeCl₃',  color:'#795548', desc:'محلول قهوه‌ای' },
+  { name:'سدیم کلرید',      formula:'NaCl',   color:'#cfd8dc', desc:'محلول بی‌رنگ (شور)' },
+  { name:'مس(II) کلرید',    formula:'CuCl₂',  color:'#00bcd4', desc:'محلول فیروزه‌ای' },
+];
+
+const compoundsDiv = document.getElementById('compounds');
+compounds.forEach(c => {
+  const btn = document.createElement('button');
+  btn.className = 'compound-btn';
+  btn.style.background = `linear-gradient(135deg, ${c.color}, ${shade(c.color,-30)})`;
+  btn.innerHTML = `${c.name}<br><small>${c.formula}</small>`;
+  btn.onclick = () => dissolve(c);
+  compoundsDiv.appendChild(btn);
+});
+
+function shade(hex, percent) {
+  let num = parseInt(hex.replace('#',''),16);
+  let r = (num >> 16) + percent;
+  let g = ((num >> 8) & 0x00FF) + percent;
+  let b = (num & 0x0000FF) + percent;
+  r = Math.max(0,Math.min(255,r));
+  g = Math.max(0,Math.min(255,g));
+  b = Math.max(0,Math.min(255,b));
+  return '#' + ((r<<16) | (g<<8) | b).toString(16).padStart(6,'0');
+}
+
+function dissolve(compound) {
+  const water = document.getElementById('water');
+  const resultText = document.getElementById('resultText');
+  
+  // تغییر رنگ با انیمیشن
+  water.style.background = `linear-gradient(to bottom, ${compound.color}dd, ${shade(compound.color,-40)})`;
+  resultText.textContent = `✨ ${compound.name} (${compound.formu
